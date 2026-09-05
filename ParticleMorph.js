@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import { MeshSurfaceSampler } from "three/addons/math/MeshSurfaceSampler.js";
 
 const PARTICLE_COUNT = 36000;
 
@@ -28,16 +29,18 @@ export default class ParticleMorph
 
     async initialize()
     {
-        const carPositions =  await this.loadModelPositions("./models/Knight.glb");
-        const carTarget = this.createMorphTarget(carPositions);
-        this.createParticles(carTarget);
+        const dragonTarget =  await this.loadModelTarget("./models/DragonAttenuation.glb", "Dragon");
+        const knightTarget =  await this.loadModelTarget("./models/Knight.glb");
+        const castleTarget =  await this.loadModelTarget("./models/hyrule_castle.glb");
+        this.createParticles(knightTarget, dragonTarget, castleTarget);
     }
 
-    createParticles(carTarget)
+    createParticles(knightTarget, dragonTarget, castleTarget)
     {
         const positions = new Float32Array(PARTICLE_COUNT * 3);
-        const morphA = carTarget;
-        const morphB = new Float32Array(PARTICLE_COUNT * 3);
+        const morphA = knightTarget;
+        const morphB = dragonTarget;
+        const morphC = castleTarget;
         const sizes = new Float32Array(PARTICLE_COUNT);
         const brightness = new Float32Array(PARTICLE_COUNT);
 
@@ -57,9 +60,9 @@ export default class ParticleMorph
             // morphA[index + 1] = carTarget.y;
             // morphA[index + 2] = carTarget.z;
 
-            morphB[index] = torusPoint.x;
-            morphB[index + 1] = torusPoint.y;
-            morphB[index + 2] = torusPoint.z
+            // morphB[index] = torusPoint.x;
+            // morphB[index + 1] = torusPoint.y;
+            // morphB[index + 2] = torusPoint.z
 
             sizes[i] = 0.65 + Math.random() * 1.85;
             brightness[i] = 0.55 + Math.random() * 0.65;
@@ -70,6 +73,7 @@ export default class ParticleMorph
         this.geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
         this.geometry.setAttribute("morphA", new THREE.BufferAttribute(morphA, 3));
         this.geometry.setAttribute("morphB", new THREE.BufferAttribute(morphB, 3));
+        this.geometry.setAttribute("morphC", new THREE.BufferAttribute(morphC, 3));
         this.geometry.setAttribute("aSize", new THREE.BufferAttribute(sizes, 1));
         this.geometry.setAttribute("aBrightness", new THREE.BufferAttribute(brightness, 1));
 
@@ -97,6 +101,10 @@ export default class ParticleMorph
 
                 shapeBColor: {
                     value: new THREE.Color(0xff508f)
+                },
+
+                shapeCColor: {
+                    value: new THREE.Color(0x50ff7a)
                 }
             },
 
@@ -108,9 +116,11 @@ export default class ParticleMorph
                 uniform vec3 cloudColor;
                 uniform vec3 shapeAColor;
                 uniform vec3 shapeBColor;
+                uniform vec3 shapeCColor;
 
                 attribute vec3 morphA;
                 attribute vec3 morphB;
+                attribute vec3 morphC;
 
                 attribute float aSize;
                 attribute float aBrightness;
@@ -128,10 +138,15 @@ export default class ParticleMorph
                         targetPosition = morphA;
                         targetColor = shapeAColor;
                     }
-                    else
+                    else if (morphIndex < 1.5)
                     {
                         targetPosition = morphB;
                         targetColor = shapeBColor;
+                    }
+                    else
+                    {
+                        targetPosition = morphC;
+                        targetColor = shapeCColor;
                     }
                 
                     vec3 morphedPosition = mix(position, targetPosition, transitionK);
@@ -349,7 +364,7 @@ export default class ParticleMorph
         if (this.phaseTime < this.cloudHoldDuration)
             return;
 
-        this.currentMorphIndex = this.currentMorphIndex === 0 ? 1 : 0;
+        this.currentMorphIndex = (this.currentMorphIndex + 1) % 3;
 
         this.material.uniforms.morphIndex.value = this.currentMorphIndex;
 
@@ -383,9 +398,22 @@ export default class ParticleMorph
 
     get currentShapeName()
     {
-        return this.currentMorphIndex === 0
-            ? "Sphere"
-            : "Torus";
+        switch (
+            this.currentMorphIndex
+            )
+        {
+            case 0:
+                return "Knight";
+
+            case 1:
+                return "Dragon";
+
+            case 2:
+                return "Castle";
+
+            default:
+                return "Unknown";
+        }
     }
 
     get phaseName()
@@ -413,43 +441,43 @@ export default class ParticleMorph
     // Models
     // --------------------------------------------------
 
-    async loadModelPositions(url)
-    {
-        const loader = new GLTFLoader();
-        const gltf = await loader.loadAsync(url);
-
-        gltf.scene.updateMatrixWorld(true);
-
-        const positions = [];
-
-        const vertex = new THREE.Vector3();
-
-        gltf.scene.traverse(
-            object =>
-            {
-                if (!object.isMesh)
-                    return;
-
-                const positionAttribute = object.geometry.getAttribute("position");
-
-                if (!positionAttribute)
-                    return;
-
-
-                for (let i = 0; i < positionAttribute.count; i++)
-                {
-                    vertex.fromBufferAttribute(positionAttribute, i);
-
-                    // include the GLTF node transforms.
-                    vertex.applyMatrix4(object.matrixWorld);
-
-                    positions.push(vertex.x, vertex.y, vertex.z);
-                }
-            }
-        );
-
-        return this.normalizeModelPositions(positions);
-    }
+    // async loadModelPositions(url)
+    // {
+    //     const loader = new GLTFLoader();
+    //     const gltf = await loader.loadAsync(url);
+    //
+    //     gltf.scene.updateMatrixWorld(true);
+    //
+    //     const positions = [];
+    //
+    //     const vertex = new THREE.Vector3();
+    //
+    //     gltf.scene.traverse(
+    //         object =>
+    //         {
+    //             if (!object.isMesh)
+    //                 return;
+    //
+    //             const positionAttribute = object.geometry.getAttribute("position");
+    //
+    //             if (!positionAttribute)
+    //                 return;
+    //
+    //
+    //             for (let i = 0; i < positionAttribute.count; i++)
+    //             {
+    //                 vertex.fromBufferAttribute(positionAttribute, i);
+    //
+    //                 // include the GLTF node transforms.
+    //                 vertex.applyMatrix4(object.matrixWorld);
+    //
+    //                 positions.push(vertex.x, vertex.y, vertex.z);
+    //             }
+    //         }
+    //     );
+    //
+    //     return this.normalizeModelPositions(positions);
+    // }
 
     normalizeModelPositions(positions)
     {
@@ -513,33 +541,295 @@ export default class ParticleMorph
         return positions;
     }
 
-    createMorphTarget(sourcePositions)
+    // createMorphTarget(sourcePositions)
+    // {
+    //     const target = new Float32Array(PARTICLE_COUNT * 3);
+    //
+    //     const sourceCount = sourcePositions.length / 3;
+    //
+    //     for (let i = 0; i < PARTICLE_COUNT; i++)
+    //     {
+    //         let sourceIndex;
+    //
+    //         if (i < sourceCount)
+    //         {
+    //             sourceIndex = i;
+    //         }
+    //         else
+    //         {
+    //             sourceIndex = Math.floor(Math.random() * sourceCount);
+    //         }
+    //
+    //         const sourceOffset = sourceIndex * 3;
+    //
+    //         const targetOffset = i * 3;
+    //         target[targetOffset] = sourcePositions[sourceOffset];
+    //         target[targetOffset + 1] = sourcePositions[sourceOffset + 1];
+    //         target[targetOffset + 2] = sourcePositions[sourceOffset + 2];
+    //     }
+    //
+    //     return target;
+    // }
+
+    async loadModelTarget(
+        url,
+        meshName = null
+    )
     {
-        const target = new Float32Array(PARTICLE_COUNT * 3);
+        const loader =
+            new GLTFLoader();
 
-        const sourceCount = sourcePositions.length / 3;
+        const gltf =
+            await loader.loadAsync(url);
 
-        for (let i = 0; i < PARTICLE_COUNT; i++)
-        {
-            let sourceIndex;
 
-            if (i < sourceCount)
+        gltf.scene.updateMatrixWorld(true);
+
+
+        const surfaces = [];
+
+
+        gltf.scene.traverse(
+            object =>
             {
-                sourceIndex = i;
+                if (!object.isMesh)
+                    return;
+
+
+                const positionAttribute =
+                    object.geometry.getAttribute(
+                        "position"
+                    );
+
+                if (!positionAttribute)
+                    return;
+
+
+                if (
+                    meshName !== null &&
+                    object.name !== meshName
+                )
+                {
+                    return;
+                }
+
+
+                console.log(
+                    `Mesh: "${object.name}"`,
+                    `Vertices: ${positionAttribute.count}`
+                );
+
+
+                // Create a position-only geometry.
+                //
+                // This avoids copying materials, UVs,
+                // normals, etc. that we don't need.
+
+                const geometry =
+                    new THREE.BufferGeometry();
+
+
+                geometry.setAttribute(
+                    "position",
+                    positionAttribute.clone()
+                );
+
+
+                if (object.geometry.index)
+                {
+                    geometry.setIndex(
+                        object.geometry.index.clone()
+                    );
+                }
+
+
+                // Bake GLTF node transforms into
+                // the geometry before sampling.
+
+                geometry.applyMatrix4(
+                    object.matrixWorld
+                );
+
+
+                const surfaceMesh =
+                    new THREE.Mesh(geometry);
+
+
+                const sampler =
+                    new MeshSurfaceSampler(
+                        surfaceMesh
+                    ).build();
+
+
+                const area =
+                    this.computeSurfaceArea(
+                        geometry
+                    );
+
+
+                surfaces.push({
+                    sampler,
+                    geometry,
+                    area,
+                    name: object.name
+                });
+            }
+        );
+
+
+        if (surfaces.length === 0)
+        {
+            throw new Error(
+                meshName
+                    ? `Mesh "${meshName}" not found in ${url}`
+                    : `No mesh found in ${url}`
+            );
+        }
+
+
+        let totalArea = 0;
+
+        for (const surface of surfaces)
+        {
+            totalArea +=
+                surface.area;
+        }
+
+
+        const cumulativeAreas = [];
+
+        let cumulativeArea = 0;
+
+        for (const surface of surfaces)
+        {
+            cumulativeArea +=
+                surface.area;
+
+            cumulativeAreas.push(
+                cumulativeArea
+            );
+        }
+
+
+        const target =
+            new Float32Array(
+                PARTICLE_COUNT * 3
+            );
+
+
+        const point = new THREE.Vector3();
+
+        for (let i = 0; i < PARTICLE_COUNT; i++
+        )
+        {
+            const randomArea = Math.random() * totalArea;
+
+            let surfaceIndex = 0;
+
+            while (randomArea > cumulativeAreas[surfaceIndex])
+            {
+                surfaceIndex++;
+            }
+
+
+            surfaces[surfaceIndex].sampler.sample(point);
+
+            const index = i * 3;
+            target[index] = point.x;
+            target[index + 1] = point.y;
+            target[index + 2] = point.z;
+        }
+
+
+        // We've copied everything we need
+        // into target now.
+
+        for (const surface of surfaces)
+        {
+            surface.geometry.dispose();
+        }
+
+        return this.normalizeModelPositions(
+            target
+        );
+    }
+
+    computeSurfaceArea(geometry)
+    {
+        const position =
+            geometry.getAttribute(
+                "position"
+            );
+
+        const index =
+            geometry.index;
+
+
+        const a =
+            new THREE.Vector3();
+
+        const b =
+            new THREE.Vector3();
+
+        const c =
+            new THREE.Vector3();
+
+        const triangle =
+            new THREE.Triangle();
+
+
+        const triangleCount =
+            index
+                ? index.count / 3
+                : position.count / 3;
+
+
+        let totalArea = 0;
+
+
+        for (let i = 0; i < triangleCount; i++)
+        {
+            let ia;
+            let ib;
+            let ic;
+
+
+            if (index)
+            {
+                ia =
+                    index.getX(i * 3);
+
+                ib =
+                    index.getX(i * 3 + 1);
+
+                ic =
+                    index.getX(i * 3 + 2);
             }
             else
             {
-                sourceIndex = Math.floor(Math.random() * sourceCount);
+                ia = i * 3;
+                ib = i * 3 + 1;
+                ic = i * 3 + 2;
             }
 
-            const sourceOffset = sourceIndex * 3;
 
-            const targetOffset = i * 3;
-            target[targetOffset] = sourcePositions[sourceOffset];
-            target[targetOffset + 1] = sourcePositions[sourceOffset + 1];
-            target[targetOffset + 2] = sourcePositions[sourceOffset + 2];
+            a.fromBufferAttribute(
+                position,
+                ia
+            );
+
+            b.fromBufferAttribute(
+                position,
+                ib
+            );
+
+            c.fromBufferAttribute(position, ic);
+
+            triangle.set(a, b, c);
+
+            totalArea += triangle.getArea();
         }
 
-        return target;
+        return totalArea;
     }
 }
