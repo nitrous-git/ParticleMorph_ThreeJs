@@ -4,13 +4,11 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="e6410764-ab7c-441c-8e54-509fe22df243" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/.idea/.gitignore" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/ParticleMorph.js" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/main.js" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/package.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/style.css" afterDir="false" />
+    <list default="true" id="e6410764-ab7c-441c-8e54-509fe22df243" name="Changes" comment="first commit - basic particle shape morpher">
+      <change beforePath="$PROJECT_DIR$/ParticleMorph.js" beforeDir="false" afterPath="$PROJECT_DIR$/ParticleMorph.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/index.html" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/main.js" beforeDir="false" afterPath="$PROJECT_DIR$/main.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/style.css" beforeDir="false" afterPath="$PROJECT_DIR$/style.css" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -27,6 +25,18 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
+  <component name="GitHubPullRequestSearchHistory"><![CDATA[{
+  "lastFilter": {
+    "state": "OPEN",
+    "assignee": "nitrous-git"
+  }
+}]]></component>
+  <component name="GithubPullRequestsUISettings"><![CDATA[{
+  "selectedUrlAndAccountId": {
+    "url": "https://github.com/nitrous-git/ParticleMorph_ThreeJs.git",
+    "accountId": "ca178ce4-2b2a-49b5-ab44-5521d7a2542d"
+  }
+}]]></component>
   <component name="ProjectColorInfo"><![CDATA[{
   "associatedIndex": 2
 }]]></component>
@@ -72,11 +82,35 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1788572360617</updated>
-      <workItem from="1788572361972" duration="1277000" />
+      <workItem from="1788572361972" duration="2201000" />
     </task>
+    <task id="LOCAL-00001" summary="first commit - basic particle shape morpher">
+      <option name="closed" value="true" />
+      <created>1788573692632</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1788573692632</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="first commit - basic particle shape morpher" />
+    <option name="LAST_COMMIT_MESSAGE" value="first commit - basic particle shape morpher" />
   </component>
 </project>

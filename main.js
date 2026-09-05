@@ -1,5 +1,5 @@
 import * as THREE from "three";
-
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import ParticleMorph from "./ParticleMorph.js";
 
 const canvas = document.getElementById("webgl-canvas");
@@ -34,6 +34,21 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.setSize(window.innerWidth, window.innerHeight);
 
 // --------------------------------------------------
+// Controls
+// --------------------------------------------------
+
+const controls = new OrbitControls(camera, renderer.domElement);
+
+controls.target.set(0, 0, 0);
+controls.enableDamping = true;
+controls.dampingFactor = 0.05;
+
+controls.minDistance = 4;
+controls.maxDistance = 25;
+
+controls.update();
+
+// --------------------------------------------------
 // Particle Morph
 // --------------------------------------------------
 
@@ -53,6 +68,38 @@ function onWindowResize()
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 }
 
+// --------------------------------------------------
+// Debug Panel
+// --------------------------------------------------
+
+const debugPanel = document.getElementById("debug-panel");
+
+let frameCounter = 0;
+let fpsTimer = 0;
+let displayedFps = 0;
+
+
+function updateDebugPanel(deltaTime)
+{
+    frameCounter++;
+    fpsTimer += deltaTime;
+
+    if (fpsTimer >= 0.25)
+    {
+        displayedFps = Math.round(frameCounter / fpsTimer);
+        frameCounter = 0;
+        fpsTimer = 0;
+    }
+
+    debugPanel.innerHTML = `
+        Particles: ${particleMorph.particleCount.toLocaleString()}<br>
+        FPS: ${displayedFps}<br>
+        Shape: ${particleMorph.currentShapeName}<br>
+        Phase: ${particleMorph.phaseName}<br>
+        Transition: ${particleMorph.transition.toFixed(3)}<br>
+        Draw Calls: ${renderer.info.render.calls}
+    `;
+}
 
 // --------------------------------------------------
 // Update
@@ -68,6 +115,8 @@ function update()
     const deltaTime = Math.min(clock.getDelta(), 0.05);
     particleMorph.update(deltaTime);
     renderer.render(scene, camera);
+
+    updateDebugPanel(deltaTime)
 }
 
 update();

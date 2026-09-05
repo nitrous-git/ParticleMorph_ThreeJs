@@ -302,4 +302,46 @@ export default class ParticleMorph
 
         return 1 - (f * f * f * f) / 2;
     }
+
+    // --------------------------------------------------
+    // Getter
+    // --------------------------------------------------
+
+    get particleCount()
+    {
+        return PARTICLE_COUNT;
+    }
+
+    get transition()
+    {
+        return this.material.uniforms.transitionK.value;
+    }
+
+    get currentShapeName()
+    {
+        return this.currentMorphIndex === 0
+            ? "Sphere"
+            : "Torus";
+    }
+
+    get phaseName()
+    {
+        switch (this.phase)
+        {
+            case Phase.ToShape:
+                return "To Shape";
+
+            case Phase.HoldShape:
+                return "Hold Shape";
+
+            case Phase.ToCloud:
+                return "To Cloud";
+
+            case Phase.HoldCloud:
+                return "Hold Cloud";
+
+            default:
+                return "Unknown";
+        }
+    }
 }
