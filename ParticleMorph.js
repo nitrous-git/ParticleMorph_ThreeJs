@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 
 const PARTICLE_COUNT = 36000;
 
@@ -23,14 +24,19 @@ export default class ParticleMorph
         this.phaseTime = 0;
 
         this.currentMorphIndex = 0;
-
-        this.createParticles();
     }
 
-    createParticles()
+    async initialize()
+    {
+        const carPositions =  await this.loadModelPositions("./models/Knight.glb");
+        const carTarget = this.createMorphTarget(carPositions);
+        this.createParticles(carTarget);
+    }
+
+    createParticles(carTarget)
     {
         const positions = new Float32Array(PARTICLE_COUNT * 3);
-        const morphA = new Float32Array(PARTICLE_COUNT * 3);
+        const morphA = carTarget;
         const morphB = new Float32Array(PARTICLE_COUNT * 3);
         const sizes = new Float32Array(PARTICLE_COUNT);
         const brightness = new Float32Array(PARTICLE_COUNT);
@@ -47,9 +53,9 @@ export default class ParticleMorph
             positions[index + 1] = cloudPoint.y;
             positions[index + 2] = cloudPoint.z;
 
-            morphA[index] = spherePoint.x;
-            morphA[index + 1] = spherePoint.y;
-            morphA[index + 2] = spherePoint.z;
+            // morphA[index] = carTarget.x;
+            // morphA[index + 1] = carTarget.y;
+            // morphA[index + 2] = carTarget.z;
 
             morphB[index] = torusPoint.x;
             morphB[index + 1] = torusPoint.y;
@@ -401,5 +407,139 @@ export default class ParticleMorph
             default:
                 return "Unknown";
         }
+    }
+
+    // --------------------------------------------------
+    // Models
+    // --------------------------------------------------
+
+    async loadModelPositions(url)
+    {
+        const loader = new GLTFLoader();
+        const gltf = await loader.loadAsync(url);
+
+        gltf.scene.updateMatrixWorld(true);
+
+        const positions = [];
+
+        const vertex = new THREE.Vector3();
+
+        gltf.scene.traverse(
+            object =>
+            {
+                if (!object.isMesh)
+                    return;
+
+                const positionAttribute = object.geometry.getAttribute("position");
+
+                if (!positionAttribute)
+                    return;
+
+
+                for (let i = 0; i < positionAttribute.count; i++)
+                {
+                    vertex.fromBufferAttribute(positionAttribute, i);
+
+                    // include the GLTF node transforms.
+                    vertex.applyMatrix4(object.matrixWorld);
+
+                    positions.push(vertex.x, vertex.y, vertex.z);
+                }
+            }
+        );
+
+        return this.normalizeModelPositions(positions);
+    }
+
+    normalizeModelPositions(positions)
+    {
+        const count = positions.length / 3;
+
+        let minX = Infinity;
+        let minY = Infinity;
+        let minZ = Infinity;
+
+        let maxX = -Infinity;
+        let maxY = -Infinity;
+        let maxZ = -Infinity;
+
+
+        for (let i = 0; i < count; i++)
+        {
+            const index = i * 3;
+
+            const x = positions[index];
+            const y = positions[index + 1];
+            const z = positions[index + 2];
+
+            minX = Math.min(minX, x);
+            minY = Math.min(minY, y);
+            minZ = Math.min(minZ, z);
+
+            maxX = Math.max(maxX, x);
+            maxY = Math.max(maxY, y);
+            maxZ = Math.max(maxZ, z);
+        }
+
+
+        const centerX = (minX + maxX) * 0.5;
+        const centerY = (minY + maxY) * 0.5;
+        const centerZ = (minZ + maxZ) * 0.5;
+
+        const sizeX = maxX - minX;
+        const sizeY = maxY - minY;
+        const sizeZ = maxZ - minZ;
+
+        const maxSize =
+            Math.max(
+                sizeX,
+                sizeY,
+                sizeZ
+            );
+
+
+        const targetSize = 5.0;
+
+        const scale = targetSize / maxSize;
+
+        for (let i = 0; i < count; i++)
+        {
+            const index =  i * 3;
+            positions[index] = (positions[index] - centerX) * scale;
+            positions[index + 1] = (positions[index + 1] - centerY) * scale;
+            positions[index + 2] = (positions[index + 2] - centerZ) * scale;
+        }
+
+        return positions;
+    }
+
+    createMorphTarget(sourcePositions)
+    {
+        const target = new Float32Array(PARTICLE_COUNT * 3);
+
+        const sourceCount = sourcePositions.length / 3;
+
+        for (let i = 0; i < PARTICLE_COUNT; i++)
+        {
+            let sourceIndex;
+
+            if (i < sourceCount)
+            {
+                sourceIndex = i;
+            }
+            else
+            {
+                sourceIndex = Math.floor(Math.random() * sourceCount);
+            }
+
+            const sourceOffset = sourceIndex * 3;
+
+            const targetOffset = i * 3;
+            target[targetOffset] = sourcePositions[sourceOffset];
+            target[targetOffset + 1] = sourcePositions[sourceOffset + 1];
+            target[targetOffset + 2] = sourcePositions[sourceOffset + 2];
+        }
+
+        return target;
     }
 }

@@ -51,7 +51,7 @@ const bloomPass =
         0.72    // threshold
     );
 
-composer.addPass(bloomPass);
+//composer.addPass(bloomPass);
 
 // --------------------------------------------------
 // Controls
@@ -73,6 +73,7 @@ controls.update();
 // --------------------------------------------------
 
 const particleMorph = new ParticleMorph(scene);
+await particleMorph.initialize();
 
 // --------------------------------------------------
 // Resize
