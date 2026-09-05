@@ -1,9 +1,11 @@
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
+import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
+import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
 import ParticleMorph from "./ParticleMorph.js";
 
 const canvas = document.getElementById("webgl-canvas");
-
 
 // --------------------------------------------------
 // Scene
@@ -32,6 +34,24 @@ const renderer =
 
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.setSize(window.innerWidth, window.innerHeight);
+
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure =  1.0;
+
+const composer = new EffectComposer(renderer);
+const renderPass = new RenderPass(scene, camera);
+composer.addPass(renderPass);
+
+const bloomPass =
+    new UnrealBloomPass(
+        new THREE.Vector2(window.innerWidth, window.innerHeight),
+        0.55,   // strength
+        0.45,   // radius
+        0.72    // threshold
+    );
+
+composer.addPass(bloomPass);
 
 // --------------------------------------------------
 // Controls
@@ -66,6 +86,8 @@ function onWindowResize()
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+    composer.setSize(window.innerWidth, window.innerHeight);
 }
 
 // --------------------------------------------------
@@ -114,7 +136,9 @@ function update()
 
     const deltaTime = Math.min(clock.getDelta(), 0.05);
     particleMorph.update(deltaTime);
-    renderer.render(scene, camera);
+
+    composer.render();
+    //renderer.render(scene, camera);
 
     updateDebugPanel(deltaTime)
 }

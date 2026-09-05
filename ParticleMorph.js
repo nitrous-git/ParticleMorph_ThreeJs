@@ -32,6 +32,8 @@ export default class ParticleMorph
         const positions = new Float32Array(PARTICLE_COUNT * 3);
         const morphA = new Float32Array(PARTICLE_COUNT * 3);
         const morphB = new Float32Array(PARTICLE_COUNT * 3);
+        const sizes = new Float32Array(PARTICLE_COUNT);
+        const brightness = new Float32Array(PARTICLE_COUNT);
 
         for (let i = 0; i < PARTICLE_COUNT; i++)
         {
@@ -51,7 +53,10 @@ export default class ParticleMorph
 
             morphB[index] = torusPoint.x;
             morphB[index + 1] = torusPoint.y;
-            morphB[index + 2] = torusPoint.z;
+            morphB[index + 2] = torusPoint.z
+
+            sizes[i] = 0.65 + Math.random() * 1.85;
+            brightness[i] = 0.55 + Math.random() * 0.65;
         }
 
         this.geometry = new THREE.BufferGeometry();
@@ -59,6 +64,8 @@ export default class ParticleMorph
         this.geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
         this.geometry.setAttribute("morphA", new THREE.BufferAttribute(morphA, 3));
         this.geometry.setAttribute("morphB", new THREE.BufferAttribute(morphB, 3));
+        this.geometry.setAttribute("aSize", new THREE.BufferAttribute(sizes, 1));
+        this.geometry.setAttribute("aBrightness", new THREE.BufferAttribute(brightness, 1));
 
         this.material = new THREE.ShaderMaterial({
             uniforms: {
@@ -71,7 +78,7 @@ export default class ParticleMorph
                 },
 
                 pointSize: {
-                    value: 18.0
+                    value: 22.0
                 },
 
                 cloudColor: {
@@ -99,7 +106,11 @@ export default class ParticleMorph
                 attribute vec3 morphA;
                 attribute vec3 morphB;
 
+                attribute float aSize;
+                attribute float aBrightness;
+
                 varying vec3 vColor;
+                varying float vAlpha;
 
                 void main()
                 {
@@ -116,45 +127,93 @@ export default class ParticleMorph
                         targetPosition = morphB;
                         targetColor = shapeBColor;
                     }
-
-                    // Gugila's basic idea:
-                    //
-                    // position + (target - position) * transitionK
-                    //
-                    // which is equivalent to:
+                
                     vec3 morphedPosition = mix(position, targetPosition, transitionK);
-
+                
                     vColor = mix(cloudColor, targetColor, transitionK);
+                    vColor *= aBrightness;
 
                     vec4 viewPosition = modelViewMatrix * vec4(morphedPosition, 1.0);
-
+                
                     gl_Position = projectionMatrix * viewPosition;
+               
+                    float distanceFromCamera = max(1.0, -viewPosition.z);
+                
+                    gl_PointSize = pointSize * aSize / distanceFromCamera;
 
-                    // Perspective-scaled particle size.
-                    gl_PointSize = pointSize / max(1.0, -viewPosition.z);
+                    // Prevent giant pixels when orbiting very close.
+                    gl_PointSize = clamp(gl_PointSize, 1.0, 7.0);
+                
+                    // Subtle depth attenuation.
+                    //
+                    // Nearby particles are more visible,
+                    // distant particles recede slightly.
+                    vAlpha = clamp(1.35 - distanceFromCamera * 0.045, 0.25, 1.0);
                 }
             `,
 
             fragmentShader: `
                 varying vec3 vColor;
+                varying float vAlpha;
 
                 void main()
                 {
-                    vec2 center = gl_PointCoord - vec2(0.5);
-                    float distanceToCenter = length(center);
-                    float alpha = 1.0 - smoothstep(0.15, 0.5, distanceToCenter);
-
-                    if (alpha <= 0.01)
+                    vec2 uv =
+                        gl_PointCoord -
+                        vec2(0.5);
+                
+                    float dist =
+                        length(uv);
+                
+                
+                    // Soft luminous core.
+                    float core =
+                        1.0 -
+                        smoothstep(
+                            0.0,
+                            0.18,
+                            dist
+                        );
+                
+                
+                    // Larger soft halo.
+                    float halo =
+                        1.0 -
+                        smoothstep(
+                            0.05,
+                            0.5,
+                            dist
+                        );
+                
+                
+                    float alpha =
+                        halo *
+                        vAlpha;
+                
+                
+                    // Slightly hotter center.
+                    vec3 finalColor =
+                        vColor *
+                        (1.0 + core * 0.75);
+                
+                
+                    if (alpha < 0.01)
                         discard;
-
-                    gl_FragColor = vec4(vColor, alpha);
+                
+                
+                    gl_FragColor =
+                        vec4(
+                            finalColor,
+                            alpha
+                        );
                 }
             `,
 
             transparent: true,
             depthTest: true,
             depthWrite: false,
-            blending: THREE.AdditiveBlending
+            blending: THREE.AdditiveBlending,
+            toneMapped: false
         });
 
         this.points = new THREE.Points(this.geometry, this.material);
@@ -171,10 +230,9 @@ export default class ParticleMorph
 
         const radial = Math.sqrt(1 - z * z);
 
-        // Similar concept to Gugila:
-        // particles distributed over spherical shells
-        // at different radii.
-        const radius = 1.5 + Math.random() * 2.5;
+        // particles distributed over spherical shells at different radii.
+        const random = Math.pow(Math.random(), 1.6);
+        const radius = 1.5 + random * 2.5;
 
         return new THREE.Vector3(
             Math.cos(theta) * radial * radius,
@@ -242,7 +300,7 @@ export default class ParticleMorph
 
         // Very slow presentation rotation.
         this.points.rotation.y += deltaTime * 0.08;
-        this.points.rotation.x += deltaTime * 0.015;
+        //this.points.rotation.x += deltaTime * 0.015;
     }
 
     updateToShape()
