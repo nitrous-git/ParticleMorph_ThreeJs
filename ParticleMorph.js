@@ -19,7 +19,7 @@ export default class ParticleMorph
 
         this.transitionDuration = 3.5;
         this.shapeHoldDuration = 1.5;
-        this.cloudHoldDuration = 0.5;
+        this.cloudHoldDuration = 1.25;
 
         this.phase = Phase.ToShape;
         this.phaseTime = 0;
@@ -122,6 +122,7 @@ export default class ParticleMorph
                     value: 0
                 },
 
+                // Dissolution
                 turbulenceStrength: {
                     value: 0.8
                 },
@@ -129,6 +130,19 @@ export default class ParticleMorph
                 swirlStrength: {
                     value: 1.2
                 },
+
+                // Living cloud
+                cloudMotionStrength: {
+                    value: 0.60
+                },
+
+                cloudSwirlSpeed: {
+                    value: 0.50
+                },
+
+                cloudBreathingStrength: {
+                    value: 0.25
+                }
             },
 
             vertexShader: `
@@ -140,6 +154,10 @@ export default class ParticleMorph
                 
                 uniform float turbulenceStrength;
                 uniform float swirlStrength;
+                
+                uniform float cloudMotionStrength;
+                uniform float cloudSwirlSpeed;
+                uniform float cloudBreathingStrength;
 
                 uniform vec3 cloudColor;
                 uniform vec3 shapeAColor;
@@ -204,11 +222,52 @@ export default class ParticleMorph
                     }
                 
                     // --------------------------------------------------
-                    // Base morph
+                    // Living cloud
+                    //
+                    // "position" remains the permanent cloud anchor.
+                    // We derive an animated position from it.
                     // --------------------------------------------------
-                
-                    vec3 morphedPosition = mix(position, targetPosition, transitionK);
-                
+                    
+                    vec3 animatedCloudPosition = position;
+                    
+                    // Slow local turbulent drift.
+                    vec3 cloudTurbulence = turbulenceField(position * 0.65 + aRandom * 3.0, time * 0.45);
+                    
+                    animatedCloudPosition += cloudTurbulence * cloudMotionStrength;
+                    
+                    // --------------------------------------------------
+                    // Slow orbital swirl around Y
+                    // --------------------------------------------------
+                    
+                    float particlePhase = aRandom * 6.2831853;
+                    
+                    float cloudAngle = time * cloudSwirlSpeed + sin(position.y * 0.7 + time * 0.25 + particlePhase) * 0.08;
+                    
+                    float cloudCos = cos(cloudAngle);
+                    float cloudSin = sin(cloudAngle);
+                    
+                    vec2 rotatedXZ = vec2(
+                        animatedCloudPosition.x * cloudCos - animatedCloudPosition.z * cloudSin,
+                        animatedCloudPosition.x * cloudSin + animatedCloudPosition.z * cloudCos
+                    );
+                    
+                    animatedCloudPosition.x = rotatedXZ.x;
+                    animatedCloudPosition.z = rotatedXZ.y;
+                    
+                    // --------------------------------------------------
+                    // Subtle vertical breathing
+                    // --------------------------------------------------
+                    
+                    float cloudRadius = length(position.xz);
+                    
+                    animatedCloudPosition.y += sin(time * 0.65 + cloudRadius * 1.4 + particlePhase) * cloudBreathingStrength;
+                    
+                    // --------------------------------------------------
+                    // Morph from living cloud -> exact target
+                    // --------------------------------------------------
+                    
+                    vec3 morphedPosition = mix(animatedCloudPosition, targetPosition, transitionK);
+
                     // --------------------------------------------------
                     // Transition envelope
                     //
