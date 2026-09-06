@@ -38,11 +38,16 @@ export default class ParticleMorph
     createParticles(knightTarget, dragonTarget, castleTarget)
     {
         const positions = new Float32Array(PARTICLE_COUNT * 3);
-        const morphA = knightTarget;
-        const morphB = dragonTarget;
-        const morphC = castleTarget;
+        const morphA = knightTarget.positions;
+        const morphB = dragonTarget.positions;
+        const morphC = castleTarget.positions;
+        const normalA = knightTarget.normals;
+        const normalB = dragonTarget.normals;
+        const normalC = castleTarget.normals;
         const sizes = new Float32Array(PARTICLE_COUNT);
         const brightness = new Float32Array(PARTICLE_COUNT);
+        const random = new Float32Array(PARTICLE_COUNT);
+
 
         for (let i = 0; i < PARTICLE_COUNT; i++)
         {
@@ -66,6 +71,7 @@ export default class ParticleMorph
 
             sizes[i] = 0.65 + Math.random() * 1.85;
             brightness[i] = 0.55 + Math.random() * 0.65;
+            random[i] = Math.random();
         }
 
         this.geometry = new THREE.BufferGeometry();
@@ -76,6 +82,11 @@ export default class ParticleMorph
         this.geometry.setAttribute("morphC", new THREE.BufferAttribute(morphC, 3));
         this.geometry.setAttribute("aSize", new THREE.BufferAttribute(sizes, 1));
         this.geometry.setAttribute("aBrightness", new THREE.BufferAttribute(brightness, 1));
+        this.geometry.setAttribute("normalA", new THREE.BufferAttribute(normalA, 3));
+        this.geometry.setAttribute("normalB", new THREE.BufferAttribute(normalB, 3));
+        this.geometry.setAttribute("normalC", new THREE.BufferAttribute(normalC, 3));
+        this.geometry.setAttribute("aRandom", new THREE.BufferAttribute(random, 1));
+
 
         this.material = new THREE.ShaderMaterial({
             uniforms: {
@@ -105,13 +116,30 @@ export default class ParticleMorph
 
                 shapeCColor: {
                     value: new THREE.Color(0x50ff7a)
-                }
+                },
+
+                time: {
+                    value: 0
+                },
+
+                turbulenceStrength: {
+                    value: 0.8
+                },
+
+                swirlStrength: {
+                    value: 1.2
+                },
             },
 
             vertexShader: `
                 uniform float transitionK;
                 uniform float morphIndex;
                 uniform float pointSize;
+                
+                uniform float time;
+                
+                uniform float turbulenceStrength;
+                uniform float swirlStrength;
 
                 uniform vec3 cloudColor;
                 uniform vec3 shapeAColor;
@@ -121,54 +149,156 @@ export default class ParticleMorph
                 attribute vec3 morphA;
                 attribute vec3 morphB;
                 attribute vec3 morphC;
+                
+                attribute vec3 normalA;
+                attribute vec3 normalB;
+                attribute vec3 normalC;
 
                 attribute float aSize;
                 attribute float aBrightness;
+                attribute float aRandom;
 
                 varying vec3 vColor;
                 varying float vAlpha;
 
+
+                // --------------------------------------------------
+                // Procedural vector field
+                // --------------------------------------------------
+                vec3 turbulenceField(vec3 p, float t)
+                {
+                    vec3 field;
+                    field.x = sin(p.y * 2.1 + t * 1.2) + cos(p.z * 1.7 - t * 0.7);
+                    field.y = sin(p.z * 2.3 + t * 0.9) + cos(p.x * 1.9 + t * 0.6);
+                    field.z = sin(p.x * 2.0 - t * 1.0) + cos(p.y * 1.8 + t * 0.8);
+                    return field * 0.5;
+                }
+                
                 void main()
                 {
                     vec3 targetPosition;
+                    vec3 targetNormal;
                     vec3 targetColor;
 
+                    // --------------------------------------------------
+                    // Select morph target
+                    // --------------------------------------------------
+                    
                     if (morphIndex < 0.5)
                     {
                         targetPosition = morphA;
+                        targetNormal = normalA;
                         targetColor = shapeAColor;
                     }
                     else if (morphIndex < 1.5)
                     {
                         targetPosition = morphB;
+                        targetNormal = normalB;
                         targetColor = shapeBColor;
                     }
                     else
                     {
                         targetPosition = morphC;
+                        targetNormal = normalC;
                         targetColor = shapeCColor;
                     }
                 
+                    // --------------------------------------------------
+                    // Base morph
+                    // --------------------------------------------------
+                
                     vec3 morphedPosition = mix(position, targetPosition, transitionK);
                 
+                    // --------------------------------------------------
+                    // Transition envelope
+                    //
+                    // 0 at cloud
+                    // 1 halfway
+                    // 0 at completed model
+                    // --------------------------------------------------
+                
+                    float transitionEnvelope = sin(clamp(transitionK, 0.0, 1.0) * 3.14159265);
+                
+                    // Make the turbulence slightly more concentrated
+                    // around the middle of the transition.
+                    transitionEnvelope = pow(transitionEnvelope, 1.25);
+      
+                    // --------------------------------------------------
+                    // Swirl around Y axis
+                    // --------------------------------------------------
+                
+                    float radiusXZ = length(morphedPosition.xz);
+                
+                    vec3 swirlDirection = vec3(-morphedPosition.z, 0.0, morphedPosition.x);
+                
+                    if (length(swirlDirection) > 0.0001)
+                    {
+                        swirlDirection = normalize(swirlDirection);
+                    }
+                
+                    float swirlWave = sin(radiusXZ * 2.2 + time * 1.6 + aRandom * 6.2831853);
+
+                    morphedPosition += swirlDirection * swirlWave * swirlStrength * transitionEnvelope;
+      
+                    // --------------------------------------------------
+                    // Turbulence
+                    // --------------------------------------------------
+                
+                    vec3 turbulence = turbulenceField(morphedPosition + aRandom * 3.0, time);
+                
+                    morphedPosition += turbulence * turbulenceStrength * transitionEnvelope;
+      
+                    // --------------------------------------------------
+                    // View-space position
+                    // --------------------------------------------------
+                
+                    vec4 viewPosition = modelViewMatrix * vec4(morphedPosition, 1.0);
+                    gl_Position = projectionMatrix * viewPosition;
+      
+                    // --------------------------------------------------
+                    // Surface lighting
+                    // --------------------------------------------------
+      
+                    vec3 viewNormal = normalize(normalMatrix * targetNormal);
+                    
+                    vec3 viewDirection = normalize(-viewPosition.xyz);
+                    
+                    vec3 lightDirection = normalize(vec3(-0.45, 0.75, 0.55));
+                    
+                    // Basic directional lighting.
+                    float diffuse = 0.35 + 0.65 * max(dot(viewNormal, lightDirection), 0.0);
+                    
+                    // Fresnel/rim lighting.
+                    float rim = pow(1.0 - abs(dot(viewNormal, viewDirection)), 2.2);
+                    
+                    // Small specular highlight.
+                    vec3 halfDirection = normalize(lightDirection + viewDirection);
+                    
+                    float specular = pow(max(dot(viewNormal, halfDirection), 0.0), 28.0);
+                    
+                    float sculptureLighting = diffuse + rim * 0.65 + specular * 1.1;
+      
+                    // --------------------------------------------------
+                    // Color
+                    // --------------------------------------------------
+      
                     vColor = mix(cloudColor, targetColor, transitionK);
+                    vColor *= mix(1.0, sculptureLighting, transitionK);
                     vColor *= aBrightness;
 
-                    vec4 viewPosition = modelViewMatrix * vec4(morphedPosition, 1.0);
-                
-                    gl_Position = projectionMatrix * viewPosition;
-               
+                    // --------------------------------------------------
+                    // Point size
+                    // --------------------------------------------------
+                    
                     float distanceFromCamera = max(1.0, -viewPosition.z);
-                
                     gl_PointSize = pointSize * aSize / distanceFromCamera;
 
                     // Prevent giant pixels when orbiting very close.
                     gl_PointSize = clamp(gl_PointSize, 1.0, 7.0);
                 
-                    // Subtle depth attenuation.
-                    //
-                    // Nearby particles are more visible,
-                    // distant particles recede slightly.
+                    // --------------------------------------------------
+                    // Depth alpha
+                    // --------------------------------------------------
                     vAlpha = clamp(1.35 - distanceFromCamera * 0.045, 0.25, 1.0);
                 }
             `,
@@ -299,6 +429,7 @@ export default class ParticleMorph
     update(deltaTime)
     {
         this.phaseTime += deltaTime;
+        this.material.uniforms.time.value += deltaTime;
 
         switch (this.phase)
         {
@@ -441,44 +572,6 @@ export default class ParticleMorph
     // Models
     // --------------------------------------------------
 
-    // async loadModelPositions(url)
-    // {
-    //     const loader = new GLTFLoader();
-    //     const gltf = await loader.loadAsync(url);
-    //
-    //     gltf.scene.updateMatrixWorld(true);
-    //
-    //     const positions = [];
-    //
-    //     const vertex = new THREE.Vector3();
-    //
-    //     gltf.scene.traverse(
-    //         object =>
-    //         {
-    //             if (!object.isMesh)
-    //                 return;
-    //
-    //             const positionAttribute = object.geometry.getAttribute("position");
-    //
-    //             if (!positionAttribute)
-    //                 return;
-    //
-    //
-    //             for (let i = 0; i < positionAttribute.count; i++)
-    //             {
-    //                 vertex.fromBufferAttribute(positionAttribute, i);
-    //
-    //                 // include the GLTF node transforms.
-    //                 vertex.applyMatrix4(object.matrixWorld);
-    //
-    //                 positions.push(vertex.x, vertex.y, vertex.z);
-    //             }
-    //         }
-    //     );
-    //
-    //     return this.normalizeModelPositions(positions);
-    // }
-
     normalizeModelPositions(positions)
     {
         const count = positions.length / 3;
@@ -541,53 +634,17 @@ export default class ParticleMorph
         return positions;
     }
 
-    // createMorphTarget(sourcePositions)
-    // {
-    //     const target = new Float32Array(PARTICLE_COUNT * 3);
-    //
-    //     const sourceCount = sourcePositions.length / 3;
-    //
-    //     for (let i = 0; i < PARTICLE_COUNT; i++)
-    //     {
-    //         let sourceIndex;
-    //
-    //         if (i < sourceCount)
-    //         {
-    //             sourceIndex = i;
-    //         }
-    //         else
-    //         {
-    //             sourceIndex = Math.floor(Math.random() * sourceCount);
-    //         }
-    //
-    //         const sourceOffset = sourceIndex * 3;
-    //
-    //         const targetOffset = i * 3;
-    //         target[targetOffset] = sourcePositions[sourceOffset];
-    //         target[targetOffset + 1] = sourcePositions[sourceOffset + 1];
-    //         target[targetOffset + 2] = sourcePositions[sourceOffset + 2];
-    //     }
-    //
-    //     return target;
-    // }
-
     async loadModelTarget(
         url,
         meshName = null
     )
     {
-        const loader =
-            new GLTFLoader();
-
-        const gltf =
-            await loader.loadAsync(url);
-
+        const loader = new GLTFLoader();
+        const gltf = await loader.loadAsync(url);
 
         gltf.scene.updateMatrixWorld(true);
 
-
         const surfaces = [];
-
 
         gltf.scene.traverse(
             object =>
@@ -625,35 +682,34 @@ export default class ParticleMorph
                 // This avoids copying materials, UVs,
                 // normals, etc. that we don't need.
 
-                const geometry =
-                    new THREE.BufferGeometry();
+                const geometry = new THREE.BufferGeometry();
 
 
-                geometry.setAttribute(
-                    "position",
-                    positionAttribute.clone()
-                );
-
+                geometry.setAttribute("position", positionAttribute.clone());
 
                 if (object.geometry.index)
                 {
-                    geometry.setIndex(
-                        object.geometry.index.clone()
-                    );
+                    geometry.setIndex(object.geometry.index.clone());
+                }
+
+                const normalAttribute = object.geometry.getAttribute("normal");
+
+                if (normalAttribute)
+                {
+                    geometry.setAttribute("normal", normalAttribute.clone());
+                }
+                else
+                {
+                    geometry.computeVertexNormals();
                 }
 
 
                 // Bake GLTF node transforms into
                 // the geometry before sampling.
 
-                geometry.applyMatrix4(
-                    object.matrixWorld
-                );
+                geometry.applyMatrix4(object.matrixWorld);
 
-
-                const surfaceMesh =
-                    new THREE.Mesh(geometry);
-
+                const surfaceMesh = new THREE.Mesh(geometry);
 
                 const sampler =
                     new MeshSurfaceSampler(
@@ -711,13 +767,11 @@ export default class ParticleMorph
         }
 
 
-        const target =
-            new Float32Array(
-                PARTICLE_COUNT * 3
-            );
-
-
+        const targetPositions = new Float32Array(PARTICLE_COUNT * 3);
         const point = new THREE.Vector3();
+
+        const targetNormals = new Float32Array(PARTICLE_COUNT * 3);
+        const normal = new THREE.Vector3();
 
         for (let i = 0; i < PARTICLE_COUNT; i++
         )
@@ -732,12 +786,18 @@ export default class ParticleMorph
             }
 
 
-            surfaces[surfaceIndex].sampler.sample(point);
+            surfaces[surfaceIndex].sampler.sample(point, normal);
 
             const index = i * 3;
-            target[index] = point.x;
-            target[index + 1] = point.y;
-            target[index + 2] = point.z;
+            targetPositions[index] = point.x;
+            targetPositions[index + 1] = point.y;
+            targetPositions[index + 2] = point.z;
+
+            normal.normalize();
+
+            targetNormals[index] = normal.x;
+            targetNormals[index + 1] = normal.y;
+            targetNormals[index + 2] = normal.z;
         }
 
 
@@ -749,9 +809,10 @@ export default class ParticleMorph
             surface.geometry.dispose();
         }
 
-        return this.normalizeModelPositions(
-            target
-        );
+        return {
+            positions: this.normalizeModelPositions(targetPositions),
+            normals: targetNormals
+        };
     }
 
     computeSurfaceArea(geometry)

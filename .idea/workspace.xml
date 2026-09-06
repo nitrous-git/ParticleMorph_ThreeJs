@@ -4,7 +4,10 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="e6410764-ab7c-441c-8e54-509fe22df243" name="Changes" comment="add MeshSurfaceSampler" />
+    <list default="true" id="e6410764-ab7c-441c-8e54-509fe22df243" name="Changes" comment="up Bloom">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ParticleMorph.js" beforeDir="false" afterPath="$PROJECT_DIR$/ParticleMorph.js" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -20,44 +23,44 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
-  <component name="GitHubPullRequestSearchHistory"><![CDATA[{
-  "lastFilter": {
-    "state": "OPEN",
-    "assignee": "nitrous-git"
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;nitrous-git&quot;
   }
-}]]></component>
-  <component name="GithubPullRequestsUISettings"><![CDATA[{
-  "selectedUrlAndAccountId": {
-    "url": "https://github.com/nitrous-git/ParticleMorph_ThreeJs.git",
-    "accountId": "ca178ce4-2b2a-49b5-ab44-5521d7a2542d"
+}</component>
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/nitrous-git/ParticleMorph_ThreeJs.git&quot;,
+    &quot;accountId&quot;: &quot;ca178ce4-2b2a-49b5-ab44-5521d7a2542d&quot;
   }
-}]]></component>
-  <component name="ProjectColorInfo"><![CDATA[{
-  "associatedIndex": 2
-}]]></component>
+}</component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 2
+}</component>
   <component name="ProjectId" id="3It8AT4QbK9zbU2DsIyTgS2YUJP" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "ModuleVcsDetector.initialDetectionPerformed": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "git-widget-placeholder": "master",
-    "junie.onboarding.icon.badge.shown": "true",
-    "last_opened_file_path": "D:/WebstormProjects/ShapeMorpher_ThreeJs/models",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "settings.editor.selected.configurable": "configurable.group.appearance",
-    "to.speed.mode.migration.done": "true",
-    "vue.rearranger.settings.migration": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
+    &quot;junie.onboarding.icon.badge.shown&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;D:/WebstormProjects/ShapeMorpher_ThreeJs/models&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;configurable.group.appearance&quot;,
+    &quot;to.speed.mode.migration.done&quot;: &quot;true&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="D:\WebstormProjects\ShapeMorpher_ThreeJs\models" />
@@ -81,7 +84,10 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1788572360617</updated>
-      <workItem from="1788572361972" duration="12164000" />
+      <workItem from="1788572361972" duration="12268000" />
+      <workItem from="1788594410882" duration="68000" />
+      <workItem from="1788651206459" duration="354000" />
+      <workItem from="1788658017925" duration="1920000" />
     </task>
     <task id="LOCAL-00001" summary="first commit - basic particle shape morpher">
       <option name="closed" value="true" />
@@ -139,7 +145,15 @@
       <option name="project" value="LOCAL" />
       <updated>1788586500576</updated>
     </task>
-    <option name="localTasksCounter" value="8" />
+    <task id="LOCAL-00008" summary="up Bloom">
+      <option name="closed" value="true" />
+      <created>1788586695165</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1788586695165</updated>
+    </task>
+    <option name="localTasksCounter" value="9" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -162,6 +176,7 @@
     <MESSAGE value="add bloom render pass + polish shader" />
     <MESSAGE value="create morph target from vertice position" />
     <MESSAGE value="add MeshSurfaceSampler" />
-    <option name="LAST_COMMIT_MESSAGE" value="add MeshSurfaceSampler" />
+    <MESSAGE value="up Bloom" />
+    <option name="LAST_COMMIT_MESSAGE" value="up Bloom" />
   </component>
 </project>
