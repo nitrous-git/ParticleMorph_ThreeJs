@@ -4,7 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="e6410764-ab7c-441c-8e54-509fe22df243" name="Changes" comment="fix envelope disappearing bug">
+    <list default="true" id="e6410764-ab7c-441c-8e54-509fe22df243" name="Changes" comment="add cloud motion">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/ParticleMorph.js" beforeDir="false" afterPath="$PROJECT_DIR$/ParticleMorph.js" afterDir="false" />
     </list>
@@ -87,7 +87,7 @@
       <workItem from="1788572361972" duration="12268000" />
       <workItem from="1788594410882" duration="68000" />
       <workItem from="1788651206459" duration="354000" />
-      <workItem from="1788658017925" duration="2920000" />
+      <workItem from="1788658017925" duration="3866000" />
     </task>
     <task id="LOCAL-00001" summary="first commit - basic particle shape morpher">
       <option name="closed" value="true" />
@@ -169,7 +169,15 @@
       <option name="project" value="LOCAL" />
       <updated>1788660629726</updated>
     </task>
-    <option name="localTasksCounter" value="11" />
+    <task id="LOCAL-00011" summary="add cloud motion">
+      <option name="closed" value="true" />
+      <created>1788661211582</created>
+      <option name="number" value="00011" />
+      <option name="presentableId" value="LOCAL-00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1788661211582</updated>
+    </task>
+    <option name="localTasksCounter" value="12" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -195,6 +203,7 @@
     <MESSAGE value="up Bloom" />
     <MESSAGE value="add light shading + turbulence transition" />
     <MESSAGE value="fix envelope disappearing bug" />
-    <option name="LAST_COMMIT_MESSAGE" value="fix envelope disappearing bug" />
+    <MESSAGE value="add cloud motion" />
+    <option name="LAST_COMMIT_MESSAGE" value="add cloud motion" />
   </component>
 </project>

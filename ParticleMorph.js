@@ -133,15 +133,15 @@ export default class ParticleMorph
 
                 // Living cloud
                 cloudMotionStrength: {
-                    value: 0.60
+                    value: 0.6 // 0.6 to 1.2
                 },
 
                 cloudSwirlSpeed: {
-                    value: 0.50
+                    value: 0.15
                 },
 
                 cloudBreathingStrength: {
-                    value: 0.25
+                    value: 0.8 // 0.25
                 }
             },
 
@@ -315,32 +315,55 @@ export default class ParticleMorph
                     // --------------------------------------------------
                     // Surface lighting
                     // --------------------------------------------------
-      
-                    vec3 viewNormal = normalize(normalMatrix * targetNormal);
                     
-                    vec3 viewDirection = normalize(-viewPosition.xyz);
+                    float sculptureLighting = 1.0;
                     
-                    vec3 lightDirection = normalize(vec3(-0.45, 0.75, 0.55));
+                    // There is no reason to evaluate model-surface
+                    // lighting while we are effectively a cloud.
+                    //
+                    // This also prevents invalid/degenerate normals
+                    // from contaminating the cloud state.
+                    if (t > 0.0001)
+                    {
+                        vec3 transformedNormal = normalMatrix * targetNormal;
+                        float normalLength = length(transformedNormal);
                     
-                    // Basic directional lighting.
-                    float diffuse = 0.35 + 0.65 * max(dot(viewNormal, lightDirection), 0.0);
+                        if (normalLength > 0.00001)
+                        {
+                            vec3 viewNormal = transformedNormal / normalLength;
+                            vec3 viewDirection = normalize(-viewPosition.xyz);
+                            vec3 lightDirection = normalize(vec3(-0.45, 0.75, 0.55));
                     
-                    // Fresnel/rim lighting.
-                    float rim = pow(1.0 - abs(dot(viewNormal, viewDirection)), 2.2);
+                            // Diffuse
+                            float normalLightDot = clamp(dot(viewNormal, lightDirection), 0.0, 1.0);
+                            float diffuse = 0.35 + 0.65 * normalLightDot;
                     
-                    // Small specular highlight.
-                    vec3 halfDirection = normalize(lightDirection + viewDirection);
+                            // Rim                    
+                            float normalViewDot = clamp(abs(dot(viewNormal, viewDirection)), 0.0, 1.0);
+                            float rimBase = max(0.0, 1.0 - normalViewDot);
+                            float rim = pow(rimBase, 2.2);
                     
-                    float specular = pow(max(dot(viewNormal, halfDirection), 0.0), 28.0);
+                            // Specular                    
+                            vec3 halfVector = lightDirection + viewDirection;
+                            float halfLength = length(halfVector);
+                            float specular = 0.0;
                     
-                    float sculptureLighting = diffuse + rim * 0.65 + specular * 1.1;
-      
+                            if (halfLength > 0.00001)
+                            {
+                                vec3 halfDirection = halfVector / halfLength;
+                                specular = pow(clamp(dot(viewNormal, halfDirection), 0.0, 1.0), 28.0);
+                            }
+                    
+                            sculptureLighting = diffuse + rim * 0.65 + specular * 1.1;
+                        }
+                    }
+                    
                     // --------------------------------------------------
                     // Color
                     // --------------------------------------------------
       
-                    vColor = mix(cloudColor, targetColor, transitionK);
-                    vColor *= mix(1.0, sculptureLighting, transitionK);
+                    vColor = mix(cloudColor, targetColor, t);
+                    vColor *= mix(1.0, sculptureLighting, t);
                     vColor *= aBrightness;
 
                     // --------------------------------------------------
