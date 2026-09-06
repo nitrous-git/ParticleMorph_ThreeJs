@@ -217,10 +217,8 @@ export default class ParticleMorph
                     // 0 at completed model
                     // --------------------------------------------------
                 
-                    float transitionEnvelope = sin(clamp(transitionK, 0.0, 1.0) * 3.14159265);
-                
-                    // Make the turbulence slightly more concentrated
-                    // around the middle of the transition.
+                    float t = clamp(transitionK, 0.0, 1.0);
+                    float transitionEnvelope =4.0 * t * (1.0 - t);
                     transitionEnvelope = pow(transitionEnvelope, 1.25);
       
                     // --------------------------------------------------
