@@ -3,6 +3,7 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
+import { AfterimagePass } from "three/addons/postprocessing/AfterimagePass.js";
 import ParticleMorph from "./ParticleMorph.js";
 
 const canvas = document.getElementById("webgl-canvas");
@@ -43,6 +44,15 @@ const composer = new EffectComposer(renderer);
 const renderPass = new RenderPass(scene, camera);
 composer.addPass(renderPass);
 
+// Trail
+const afterimagePass =
+    new AfterimagePass(
+        0.0
+    );
+
+composer.addPass(afterimagePass);
+
+// Bloom
 const bloomPass =
     new UnrealBloomPass(
         new THREE.Vector2(window.innerWidth, window.innerHeight),
@@ -125,6 +135,38 @@ function updateDebugPanel(deltaTime)
 }
 
 // --------------------------------------------------
+// Afterimage trail
+// --------------------------------------------------
+
+let trailDamp = 0.0;
+
+function updateTrails(deltaTime)
+{
+    let targetDamp;
+
+    switch (particleMorph.phaseName)
+    {
+        case "To Shape":
+        case "To Cloud":
+        case "Hold Cloud":
+            targetDamp = 0.88;
+            break;
+
+        // case "Hold Cloud":
+        //     targetDamp = 0.88;
+        //     break;
+
+        case "Hold Shape":
+        default:
+            targetDamp = 0.10;
+            break;
+    }
+
+    trailDamp = THREE.MathUtils.damp(trailDamp, targetDamp, 7.0, deltaTime);
+    afterimagePass.uniforms.damp.value = trailDamp;
+}
+
+// --------------------------------------------------
 // Update
 // --------------------------------------------------
 
@@ -137,6 +179,10 @@ function update()
 
     const deltaTime = Math.min(clock.getDelta(), 0.05);
     particleMorph.update(deltaTime);
+
+    updateTrails(deltaTime);
+
+    controls.update();
 
     composer.render();
     //renderer.render(scene, camera);
